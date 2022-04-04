@@ -12,6 +12,7 @@ const db = new Database('./data.db', {
 db.exec(`
 DROP TABLE IF EXISTS 'watchedTags';
 DROP TABLE IF EXISTS 'questionTags';
+DROP TABLE IF EXISTS 'commentLikes';
 DROP TABLE IF EXISTS 'comments';
 DROP TABLE IF EXISTS 'friends';
 DROP TABLE IF EXISTS 'question';
@@ -33,8 +34,8 @@ CREATE TABLE IF NOT EXISTS "user" (
     "title" text,
     "userId" INTEGER NOT NULL,
     "content" text NOT NULL,
-    "upvotes" INTEGER NOT NULL,
-    "downvotes" INTEGER NOT NULL,
+    "upvotes" INTEGER DEFAULT 0,
+    "downvotes" INTEGER DEFAULT 0,
     "createdAt" datetime
   );
   
@@ -90,18 +91,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 
 `);
 
-for (const user of questions) {
-  db.prepare(
-      `INSERT INTO question (title, userId, content, upvotes, downvotes, createdAt) VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(
-      user.title,
-      user.userId,
-      user.content,
-      user.upvotes,
-      user.downvotes,
-      user.createdAt
-  );
-}
+
 
 for (const tag of tags) {
     db.prepare(`INSERT INTO tags (name, description) VALUES (?, ?)`).run(
@@ -130,6 +120,20 @@ for (const user of generateQuestions()) {
         user.createdAt
     );
 }
+
+for (const user of questions) {
+  db.prepare(
+      `INSERT INTO question (title, userId, content, upvotes, downvotes, createdAt) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(
+      user.title,
+      user.userId,
+      user.content,
+      user.upvotes,
+      user.downvotes,
+      user.createdAt
+  );
+}
+
 
 for (let index = 1; index < 102; index++) {
   db.prepare(`INSERT INTO questionTags (questionId, tagId) VALUES (?, ?)`).run(

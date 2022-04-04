@@ -22,6 +22,8 @@ import {
     countQuestionsByTag,
     createComment,
     createCommentLike,
+    createQuestion,
+    createQuestionTag,
     createUser,
     getCommentById,
     getCommentLike,
@@ -30,6 +32,7 @@ import {
     getQuestionComments,
     getQuestions,
     getQuestionsByTag,
+    getTagByName,
     getTags,
     getUserByX,
     increaseCommentUpvote,
@@ -117,8 +120,7 @@ app.get('/discord-questions/:channelId', async (req, res) => {
         `https://discord.com/api/v9/channels/${id}/messages?limit=50`,
         {
             headers: {
-                Authorization:
-                    'ODk2ODM3NTQ5MTg2NzU2NjM5.YWM7Qw.yFJ7TFqncdvnKZcrD57-uW3tkeA',
+                Authorization: process.env.DISCORD_TOKEN!,
             },
         }
     );
@@ -130,7 +132,7 @@ app.get('/discord-questions/:channelId', async (req, res) => {
     });
 
     // for (const thread of filteredThreads) {
-    //     axios
+    //    await axios
     //         .get(
     //             `https://discord.com/api/v9/channels/${thread.thread.id}/messages?limit=50`,
     //             {
@@ -235,7 +237,6 @@ app.get('/popularTags', (req, res) => {
     res.send(getPopularTags());
 });
 
-
 //get questions by tag
 app.get('/tag/:tag', (req, res) => {
     const tag = req.params.tag;
@@ -244,4 +245,28 @@ app.get('/tag/:tag', (req, res) => {
         question.nrOfAnswers = countQuestionAnswers(question.id);
     }
     res.send({ questions, count: countQuestionsByTag(+tag) });
+});
+
+//create question
+app.post('/question', (req, res) => {
+    const { userId, title, content, createdAt, tag } = req.body;
+    const token = req.headers.authorization || '';
+    try {
+        //@ts-ignore
+        const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+        if (decodedData.id !== userId) throw Error;
+        const result = createQuestion(userId, title, content, createdAt);
+        const foundTag = getTagByName(tag);
+        // if (!foundTag)return
+        createQuestionTag(result.lastInsertRowid, foundTag.id);
+        const questions = getQuestions(0);
+        for (const question of questions) {
+            question.nrOfAnswers = countQuestionAnswers(question.id);
+        }
+
+        res.send({ questions, count: countQuestions() });
+        res.send();
+    } catch (error) {
+        res.status(400).send({ error });
+    }
 });

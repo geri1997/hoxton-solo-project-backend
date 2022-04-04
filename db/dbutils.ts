@@ -25,12 +25,14 @@ export function getUserByX(
 export function getQuestions(page: any) {
     return db
         .prepare(
-            `select question.*,tags.name as tag, user.username 
+            `select question.*,tags.name as tag,tags.id as tagId, user.username 
             from question
             join questionTags on question.id = questionTags.questionId
             join tags on questionTags.tagId = tags.id
 			join user on question.userId = user.id
-              LIMIT 10 OFFSET ${page * 10}`
+            Order by question.createdAt desc
+			LIMIT 10 OFFSET ${page*10}
+            `
         )
         .all();
 }
@@ -48,7 +50,7 @@ export function getTags() {
     return db.prepare('SELECT * FROM tags').all();
 }
 
-export function getQuestionById(id: number) {
+export function getQuestionById(id: number | bigint) {
     return db
         .prepare(
             `SELECT question.*, user.username, tags.name as tag, tags.id as tagId
@@ -116,20 +118,22 @@ export function increaseCommentUpvote(id: number) {
 }
 
 export function getPopularTags() {
-    return db.prepare(
-        ` SELECT tags.*, COUNT(questionId) AS question_count
+    return db
+        .prepare(
+            ` SELECT tags.*, COUNT(questionId) AS question_count
     FROM tags LEFT JOIN questionTags
     ON tags.id = questionTags.tagId
     GROUP BY tags.id
     ORDER BY  question_count DESC`
-    ).all();
+        )
+        .all();
 }
 
 //get questions with specific tag
 export function getQuestionsByTag(tagId: number) {
     return db
         .prepare(
-            `SELECT question.*, user.username, tags.name as tag, tags.id as tagId
+            `SELECT question.*, user.username, tags.name as tag,tags.id as tagId, tags.id as tagId
     FROM question
      join questionTags on question.id = questionTags.questionId 
      Join user On question.userId=user.id
@@ -143,8 +147,29 @@ export function getQuestionsByTag(tagId: number) {
 //count questions with speicific tag
 export function countQuestionsByTag(tagId: number) {
     return db
-        .prepare(
-            `SELECT COUNT(*) count FROM questionTags WHERE tagId=?`
-        )
+        .prepare(`SELECT COUNT(*) count FROM questionTags WHERE tagId=?`)
         .get(tagId);
-}   
+}
+
+export function createQuestion(
+    userId: number,
+    title: string,
+    content: string,
+    createdAt: string
+) {
+    return db
+        .prepare(
+            `INSERT INTO question (userId, title, content,createdAt) VALUES (?, ?, ?,?)`
+        )
+        .run(userId, title, content, createdAt);
+}
+
+export function createQuestionTag(questionId: number | bigint, tagId: number) {
+    return db
+        .prepare(`INSERT INTO questionTags (questionId, tagId) VALUES (?, ?)`)
+        .run(questionId, tagId);
+}
+
+export function getTagByName(name: any) {
+    return db.prepare(`SELECT * FROM tags WHERE name=?`).get(name);
+}
