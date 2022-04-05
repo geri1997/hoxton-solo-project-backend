@@ -14,6 +14,9 @@ DROP TABLE IF EXISTS 'watchedTags';
 DROP TABLE IF EXISTS 'questionTags';
 DROP TABLE IF EXISTS 'commentLikes';
 DROP TABLE IF EXISTS 'commentDislikes';
+
+DROP TABLE IF EXISTS 'questionLikes';
+DROP TABLE IF EXISTS 'questionDislikes';
 DROP TABLE IF EXISTS 'comments';
 DROP TABLE IF EXISTS 'friends';
 DROP TABLE IF EXISTS 'question';
@@ -95,6 +98,22 @@ CREATE TABLE IF NOT EXISTS "user" (
     "userId" INTEGER NOT NULL,
     "commentId" INTEGER NOT NULL,
     FOREIGN KEY ("commentId") REFERENCES "comments" ("id"),
+    FOREIGN KEY ("userId") REFERENCES "user" ("id")
+  );
+
+  CREATE TABLE IF NOT EXISTS "questionLikes" (
+    "id" INTEGER PRIMARY KEY,
+    "userId" INTEGER NOT NULL,
+    "questionId" INTEGER NOT NULL,
+    FOREIGN KEY ("questionId") REFERENCES "question" ("id"),
+    FOREIGN KEY ("userId") REFERENCES "user" ("id")
+  );
+
+  CREATE TABLE IF NOT EXISTS "questionDislikes" (
+    "id" INTEGER PRIMARY KEY,
+    "userId" INTEGER NOT NULL,
+    "questionId" INTEGER NOT NULL,
+    FOREIGN KEY ("questionId") REFERENCES "question" ("id"),
     FOREIGN KEY ("userId") REFERENCES "user" ("id")
   );
 

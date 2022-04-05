@@ -223,3 +223,74 @@ export function decreaseNumberOfCommentDownvotesBy2(id: number) {
         .prepare(`UPDATE comments SET downvotes = downvotes - 2 WHERE id=?`)
         .run(id);
 }
+
+
+export function createQuestionLike(userId: number, questionId: number) {
+    return db
+        .prepare(`INSERT INTO questionLikes (userId, questionId) VALUES (?, ?)`)
+        .run(userId, questionId);
+}
+
+export function increaseQuestionUpvote(id: number) {
+    return db
+        .prepare(`UPDATE question SET upvotes = upvotes + 1 WHERE id=?`)
+        .run(id);
+}
+
+export function getQuestionLike(userId: number, questionId: number) {
+    return db
+        .prepare(`SELECT * FROM questionLikes WHERE userId=? AND questionId=?`)
+        .get(userId, questionId);
+}
+
+export function getQuestionDislike(userId: number, questionId: number) {
+    return db
+        .prepare(`SELECT * FROM questionDislikes WHERE userId=? AND questionId=?`)
+        .get(userId, questionId);
+}
+
+export function deleteQuestionDislike(userId: number, questionId: number) {
+    return db
+        .prepare(`DELETE FROM questionDislikes WHERE userId=? AND questionId=?`)
+        .run(userId, questionId);
+}
+
+
+export function increaseNumberOfQuestionUpvotes(id: number) {
+    return db
+        .prepare(`UPDATE question SET upvotes = upvotes + 1 WHERE id=?`)
+        .run(id);
+}
+
+export function decreaseNumberOfQuestionDownvotes(id: number) {
+    return db
+        .prepare(`UPDATE question SET downvotes = downvotes - 1 WHERE id=?`)
+        .run(id);
+}
+
+
+export function createQuestionDislike(userId: number, questionId: number) {
+    return db
+        .prepare(`INSERT INTO questionDislikes (userId, questionId) VALUES (?, ?)`)
+        .run(userId, questionId);
+}
+
+
+export function increaseQuestionDownvote(id: number) {
+    return db
+        .prepare(`UPDATE question SET downvotes = downvotes + 1 WHERE id=?`)
+        .run(id);
+}
+
+export function decreaseNumberOfQuestionUpvotes(id: number) {
+    return db
+        .prepare(`UPDATE question SET upvotes = upvotes - 1 WHERE id=?`)
+        .run(id);
+}
+
+
+export function deleteQuestionLike(userId: number, questionId: number) {
+    return db
+        .prepare(`DELETE FROM questionLikes WHERE userId=? AND questionId=?`)
+        .run(userId, questionId);
+}

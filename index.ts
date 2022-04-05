@@ -43,6 +43,16 @@ import {
     deleteCommentDislike,
     decreaseNumberOfCommentDownvotes,
     decreaseNumberOfCommentUpvotes,
+    getQuestionLike,
+    getQuestionDislike,
+    deleteQuestionDislike,
+    decreaseNumberOfQuestionDownvotes,
+    createQuestionLike,
+    increaseQuestionUpvote,
+    createQuestionDislike,
+    increaseQuestionDownvote,
+    decreaseNumberOfQuestionUpvotes,
+    deleteQuestionLike,
 } from './db/dbutils';
 
 //create express app
@@ -180,22 +190,32 @@ app.get('/tags', (req, res) => {
 app.get('/question/:id', (req, res) => {
     const id = +req.params.id;
     const token = req.headers.authorization || '';
-    //@ts-ignore
-    const decodedData = jwt.verify(token, process.env.JWT_SECRET);
-    const user = getUserByX('id', decodedData.id);
+    try {
+        //@ts-ignore
+        const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+        const user = getUserByX('id', decodedData.id);
 
-    const question = getQuestionById(id);
-    const comments = getQuestionComments(id);
-    if (user) {
-        for (const comment of comments) {
-            comment.isLiked = Boolean(getCommentLike(user.id, comment.id));
-            comment.isDisliked = Boolean(
-                getCommentDislike(user.id, comment.id)
-            );
+        const question = getQuestionById(id);
+        const comments = getQuestionComments(id);
+        question.isLiked = Boolean(getQuestionLike(user.id, id));
+        question.isDisliked = Boolean(getQuestionDislike(user.id, id));
+        if (user) {
+            for (const comment of comments) {
+                comment.isLiked = Boolean(getCommentLike(user.id, comment.id));
+                comment.isDisliked = Boolean(
+                    getCommentDislike(user.id, comment.id)
+                );
+            }
         }
+        question.comments = comments;
+        res.send(question);
+    } catch (error) {
+        const question = getQuestionById(id);
+        const comments = getQuestionComments(id);
+        question.comments = comments;
+        res.send(question);
+        
     }
-    question.comments = comments;
-    res.send(question);
 });
 
 //create comment
@@ -234,7 +254,6 @@ app.patch('/comment/:id/upvote', (req, res) => {
         createCommentLike(user.id, +id);
         increaseCommentUpvote(+id);
 
-       
         const comment = getCommentById(id);
         comment.isLiked = true;
         comment.isDisliked = false;
@@ -264,7 +283,6 @@ app.patch('/comment/:id/downvote', (req, res) => {
             deleteCommentLike(user.id, +id);
         }
 
-        
         const comment = getCommentById(id);
         comment.isDisliked = true;
         comment.isLiked = false;
@@ -326,6 +344,64 @@ app.post('/question', (req, res) => {
 
         res.send({ questions, count: countQuestions() });
         res.send();
+    } catch (error) {
+        res.status(400).send({ error });
+    }
+});
+
+//upvote question
+app.patch('/question/:id/upvote', (req, res) => {
+    const { id } = req.params;
+    const token = req.headers.authorization || '';
+    try {
+        //@ts-ignore
+        const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+        const user = getUserByX('id', decodedData.id);
+        if (!user) throw Error;
+        if (getQuestionLike(user.id, +id))
+            return res
+                .status(400)
+                .send({ error: 'You already upvoted this question' });
+        if (getQuestionDislike(user.id, +id)) {
+            deleteQuestionDislike(user.id, +id);
+            decreaseNumberOfQuestionDownvotes(+id);
+        }
+        createQuestionLike(user.id, +id);
+        increaseQuestionUpvote(+id);
+
+        const question = getQuestionById(+id);
+        question.isLiked = true;
+        question.isDisliked = false;
+        res.send(question);
+    } catch (error) {
+        res.status(400).send({ error });
+    }
+});
+
+//downvote question
+app.patch('/question/:id/downvote', (req, res) => {
+    const { id } = req.params;
+    const token = req.headers.authorization || '';
+    try {
+        //@ts-ignore
+        const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+        const user = getUserByX('id', decodedData.id);
+        if (!user) throw Error;
+        if (getQuestionDislike(user.id, +id))
+            return res
+                .status(400)
+                .send({ error: 'You already downvoted this question' });
+        createQuestionDislike(user.id, +id);
+        increaseQuestionDownvote(+id);
+        if (getQuestionLike(user.id, +id)) {
+            decreaseNumberOfQuestionUpvotes(+id);
+            deleteQuestionLike(user.id, +id);
+        }
+
+        const question = getQuestionById(+id);
+        question.isDisliked = true;
+        question.isLiked = false;
+        res.send(question);
     } catch (error) {
         res.status(400).send({ error });
     }
