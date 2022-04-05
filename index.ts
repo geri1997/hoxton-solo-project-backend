@@ -169,6 +169,19 @@ app.get('/discord-questions/:channelId', async (req, res) => {
     res.send(filteredThreads);
     // }, 5000);
 });
+app.get('/single-discord-q/:channelId', async (req, res) => {
+    const id = req.params.channelId;
+    const allThreads = await axios.get(
+        `https://discord.com/api/v9/channels/${id}/messages?limit=50`,
+        {
+            headers: {
+                Authorization: process.env.DISCORD_TOKEN!,
+            },
+        }
+    );
+    console.log(allThreads)
+    res.send(allThreads.data);
+});
 
 //get questions
 app.get('/questions', (req, res) => {
@@ -214,7 +227,6 @@ app.get('/question/:id', (req, res) => {
         const comments = getQuestionComments(id);
         question.comments = comments;
         res.send(question);
-        
     }
 });
 
