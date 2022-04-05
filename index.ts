@@ -33,9 +33,16 @@ import {
     getQuestions,
     getQuestionsByTag,
     getTagByName,
+    getCommentDislike,
     getTags,
     getUserByX,
     increaseCommentUpvote,
+    createCommentDislike,
+    increaseCommentDownvote,
+    deleteCommentLike,
+    deleteCommentDislike,
+    decreaseNumberOfCommentDownvotes,
+    decreaseNumberOfCommentUpvotes,
 } from './db/dbutils';
 
 //create express app
@@ -172,8 +179,21 @@ app.get('/tags', (req, res) => {
 //get single question
 app.get('/question/:id', (req, res) => {
     const id = +req.params.id;
+    const token = req.headers.authorization || '';
+    //@ts-ignore
+    const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+    const user = getUserByX('id', decodedData.id);
+
     const question = getQuestionById(id);
     const comments = getQuestionComments(id);
+    if (user) {
+        for (const comment of comments) {
+            comment.isLiked = Boolean(getCommentLike(user.id, comment.id));
+            comment.isDisliked = Boolean(
+                getCommentDislike(user.id, comment.id)
+            );
+        }
+    }
     question.comments = comments;
     res.send(question);
 });
@@ -202,13 +222,53 @@ app.patch('/comment/:id/upvote', (req, res) => {
         //@ts-ignore
         const decodedData = jwt.verify(token, process.env.JWT_SECRET);
         const user = getUserByX('id', decodedData.id);
+        if (!user) throw Error;
         if (getCommentLike(user.id, +id))
             return res
                 .status(400)
                 .send({ error: 'You already upvoted this comment' });
+        if (getCommentDislike(user.id, +id)) {
+            deleteCommentDislike(user.id, +id);
+            decreaseNumberOfCommentDownvotes(+id);
+        }
         createCommentLike(user.id, +id);
         increaseCommentUpvote(+id);
-        res.send(getCommentById(id));
+
+       
+        const comment = getCommentById(id);
+        comment.isLiked = true;
+        comment.isDisliked = false;
+        res.send(comment);
+    } catch (error) {
+        res.status(400).send({ error });
+    }
+});
+
+//downvote comment
+app.patch('/comment/:id/downvote', (req, res) => {
+    const { id } = req.params;
+    const token = req.headers.authorization || '';
+    try {
+        //@ts-ignore
+        const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+        const user = getUserByX('id', decodedData.id);
+        if (!user) throw Error;
+        if (getCommentDislike(user.id, +id))
+            return res
+                .status(400)
+                .send({ error: 'You already downvoted this comment' });
+        createCommentDislike(user.id, +id);
+        increaseCommentDownvote(+id);
+        if (getCommentLike(user.id, +id)) {
+            decreaseNumberOfCommentUpvotes(+id);
+            deleteCommentLike(user.id, +id);
+        }
+
+        
+        const comment = getCommentById(id);
+        comment.isDisliked = true;
+        comment.isLiked = false;
+        res.send(comment);
     } catch (error) {
         res.status(400).send({ error });
     }

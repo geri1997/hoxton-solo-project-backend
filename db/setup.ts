@@ -13,6 +13,7 @@ db.exec(`
 DROP TABLE IF EXISTS 'watchedTags';
 DROP TABLE IF EXISTS 'questionTags';
 DROP TABLE IF EXISTS 'commentLikes';
+DROP TABLE IF EXISTS 'commentDislikes';
 DROP TABLE IF EXISTS 'comments';
 DROP TABLE IF EXISTS 'friends';
 DROP TABLE IF EXISTS 'question';
@@ -82,6 +83,14 @@ CREATE TABLE IF NOT EXISTS "user" (
   );
 
   CREATE TABLE IF NOT EXISTS "commentLikes" (
+    "id" INTEGER PRIMARY KEY,
+    "userId" INTEGER NOT NULL,
+    "commentId" INTEGER NOT NULL,
+    FOREIGN KEY ("commentId") REFERENCES "comments" ("id"),
+    FOREIGN KEY ("userId") REFERENCES "user" ("id")
+  );
+
+  CREATE TABLE IF NOT EXISTS "commentDislikes" (
     "id" INTEGER PRIMARY KEY,
     "userId" INTEGER NOT NULL,
     "commentId" INTEGER NOT NULL,

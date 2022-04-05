@@ -31,7 +31,7 @@ export function getQuestions(page: any) {
             join tags on questionTags.tagId = tags.id
 			join user on question.userId = user.id
             Order by question.createdAt desc
-			LIMIT 10 OFFSET ${page*10}
+			LIMIT 10 OFFSET ${page * 10}
             `
         )
         .all();
@@ -172,4 +172,54 @@ export function createQuestionTag(questionId: number | bigint, tagId: number) {
 
 export function getTagByName(name: any) {
     return db.prepare(`SELECT * FROM tags WHERE name=?`).get(name);
+}
+
+export function deleteCommentLike(userId: number, commentId: number) {
+    return db
+        .prepare(`DELETE FROM commentLikes WHERE userId=? AND commentId=?`)
+        .run(userId, commentId);
+}
+
+export function createCommentDislike(userId: number, commentId: number) {
+    return db
+        .prepare(
+            `INSERT INTO commentDislikes (userId, commentId) VALUES (?, ?)`
+        )
+        .run(userId, commentId);
+}
+
+export function getCommentDislike(userId: number, commentId: number) {
+    return db
+        .prepare(`SELECT * FROM commentDislikes WHERE userId=? AND commentId=?`)
+        .get(userId, commentId);
+}
+
+export function increaseCommentDownvote(id: number) {
+    return db
+        .prepare(`UPDATE comments SET downvotes = downvotes + 1 WHERE id=?`)
+        .run(id);
+}
+
+export function deleteCommentDislike(userId: number, commentId: number) {
+    return db
+        .prepare(`DELETE FROM commentDislikes WHERE userId=? AND commentId=?`)
+        .run(userId, commentId);
+}
+
+export function decreaseNumberOfCommentUpvotes(id: number) {
+    return db
+        .prepare(`UPDATE comments SET upvotes = upvotes - 1 WHERE id=?`)
+        .run(id);
+}
+
+export function decreaseNumberOfCommentDownvotes(id: number) {
+    return db
+        .prepare(`UPDATE comments SET downvotes = downvotes - 1 WHERE id=?`)
+        .run(id);
+}
+
+export function decreaseNumberOfCommentDownvotesBy2(id: number) {
+    return db
+        .prepare(`UPDATE comments SET downvotes = downvotes - 2 WHERE id=?`)
+        .run(id);
 }
