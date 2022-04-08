@@ -53,6 +53,7 @@ import {
     increaseQuestionDownvote,
     decreaseNumberOfQuestionUpvotes,
     deleteQuestionLike,
+    getQuestionsThatIncludeTitle,
 } from './db/dbutils';
 
 //create express app
@@ -69,10 +70,6 @@ const db = new sqlite('./db.sqlite');
 //listen on port 3009
 app.listen(3009, () => {
     console.log('listening on port 3009');
-});
-
-app.get('/', (req, res) => {
-    res.send('Hello World');
 });
 
 //register
@@ -179,7 +176,7 @@ app.get('/single-discord-q/:channelId', async (req, res) => {
             },
         }
     );
-    console.log(allThreads)
+    console.log(allThreads);
     res.send(allThreads.data);
 });
 
@@ -361,6 +358,17 @@ app.post('/question', (req, res) => {
     }
 });
 
+//search
+app.get('/search', (req, res) => {
+    const questions = getQuestionsThatIncludeTitle(req.query.search as string);
+    for (const question of questions) {
+        question.nrOfAnswers = countQuestionAnswers(question.id);
+    }
+
+    res.send({ questions, count: countQuestions() });
+    // res.send(questions)
+});
+
 //upvote question
 app.patch('/question/:id/upvote', (req, res) => {
     const { id } = req.params;
@@ -418,3 +426,225 @@ app.patch('/question/:id/downvote', (req, res) => {
         res.status(400).send({ error });
     }
 });
+
+//video stuff
+// const { v4: uuidV4 } = require('uuid');
+// app.set('view engine', 'ejs');
+// app.use(express.static('public'));
+
+// // const io = require('socket.io')(server);
+// const { ExpressPeerServer } = require('peer');
+// const peerServer = ExpressPeerServer(server, {
+// debug: true,
+// });
+// app.use('/peerjs', peerServer);
+// app.get('/', (req, res) => {
+//     res.redirect(`/${uuidV4()}`);
+// });
+
+// app.get('/:room', (req, res) => {
+//     res.render('room', { roomId: req.params.room });
+// });
+
+// io.on('connection', (socket: any) => {
+//     socket.on('join-room', (roomId: any, userId: any) => {
+//         socket.join(roomId);
+//         socket.to(roomId).broadcast.emit('user-connected', userId);
+//     });
+// });
+
+// import http from 'http';
+// const server = http.createServer(app);
+// import { Server } from 'socket.io';
+// const io = new Server(server);
+
+// app.get('/ama', (req, res) => {
+//     res.sendFile(__dirname + '/index.html');
+// });
+
+// io.on('connection', (socket: any) => {
+//     console.log('a user connected');
+//     socket.on('disconnect', () => {
+//         io.emit('disconnecta', `1 of the suers has disconnected`);
+//         console.log('user disconnected');
+//     });
+
+//     socket.on('resize', (msg: any) => {
+//         console.log('resized');
+//         io.emit('resize', 'wndow resized');
+//     });
+
+//     socket.on('keypress', (msg: any) => {
+//         console.log('key pressed');
+//         //kur ndodh eventi me emrin keypress, bahet console log ne terminal key pressed edhe i bahet broadcast ose emit to all users qe e jan listening per ikyt event(listening mduket asht kur kan (socket.on('keypress', (msg) => {
+//         // console.log(msg);
+//         // });)). msg itu asht njaj second argument qe kam nis kur bahet ky eventi. nkyt rast asht e.key. edhe baj broadcast msg + ' key has been pressed'.
+//         io.emit('keypress', msg + ' key has been pressed');
+//     });
+
+//     socket.on('chataa message', (msg: any) => {
+//         io.emit('chataa message', msg);
+//         console.log('message: ' + msg);
+//     });
+// });
+
+// const path = require('path');
+// const http = require('http');
+// const socketio = require('socket.io');
+// const formatMessage = require('./utils/messages');
+// const {
+//     userJoin,
+//     getCurrentUser,
+//     userLeave,
+//     getRoomUsers,
+// } = require('./utils/users');
+
+// const server = http.createServer(app);
+// const io = socketio(server);
+
+// // Set static folder
+// app.use(express.static(path.join(__dirname, 'public')));
+
+// const botName = 'ChatCord Bot';
+
+// // Run when client connects
+// io.on('connection', (socket: any) => {
+
+//     io.emit('message', 'Welcome to ChatCord');
+//     socket.emit('message', 'Welcome to ChatCord');
+
+//     socket.on(
+//         'joinRoom',
+//         ({ username, room }: { username: any; room: any }) => {
+//             const user = userJoin(socket.id, username, room);
+
+//             socket.join(user.room);
+
+//             // Welcome current user
+//             socket.emit(
+//                 'message',
+//                 formatMessage(botName, 'Welcome to ChatCord!')
+//             );
+
+//             // Broadcast when a user connects
+//             socket.broadcast
+//                 .to(user.room)
+//                 .emit(
+//                     'message',
+//                     formatMessage(
+//                         botName,
+//                         `${user.username} has joined the chat`
+//                     )
+//                 );
+
+//             // Send users and room info
+//             io.to(user.room).emit('roomUsers', {
+//                 room: user.room,
+//                 users: getRoomUsers(user.room),
+//             });
+//         }
+//     );
+
+//     // Listen for chatMessage
+//     socket.on('chatMessage', (msg: any) => {
+//         const user = getCurrentUser(socket.id);
+
+//         io.to(user.room).emit('message', formatMessage(user.username, msg));
+//     });
+
+//     // Runs when client disconnects
+//     socket.on('disconnect', () => {
+//         const user = userLeave(socket.id);
+
+//         if (user) {
+//             io.to(user.room).emit(
+//                 'message',
+//                 formatMessage(botName, `${user.username} has left the chat`)
+//             );
+
+//             // Send users and room info
+//             io.to(user.room).emit('roomUsers', {
+//                 room: user.room,
+//                 users: getRoomUsers(user.room),
+//             });
+//         }
+//     });
+// });
+
+// const uuidv4 = require('uuid').v4;
+
+// const messages = new Set();
+// const users = new Map();
+
+// const defaultUser = {
+//     id: 'anon',
+//     name: 'Anonymous',
+// };
+
+// const messageExpirationTimeMS = 5 * 60 * 1000;
+
+// class Connection {
+//     constructor(io:any, socket:any) {
+//         //@ts-ignore
+//         this.socket = socket;//@ts-ignore
+//         this.io = io;
+
+//         socket.on('getMessages', () => this.getMessages());//@ts-ignore
+//         socket.on('message', (value) => {
+//             this.handleMessage(value);
+//             console.log(value);
+//         });
+//         socket.on('disconnect', () => this.disconnect());//@ts-ignore
+//         socket.on('connect_error', (err) => {
+//             console.log(`connect_error due to ${err.message}`);
+//         });
+//     }
+// //@ts-ignore
+//     sendMessage(message) {//@ts-ignore
+//         this.io.sockets.emit('message', message);
+//     }
+
+//     getMessages() {
+//         messages.forEach((message) => this.sendMessage(message));
+//     }
+// //@ts-ignore
+//     handleMessage(value) {
+//         const message = {
+//             id: uuidv4(),//@ts-ignore
+//             user: users.get(this.socket) || defaultUser,
+//             value,
+//             time: Date.now(),
+//         };
+
+//         messages.add(message);
+//         this.sendMessage(message);
+
+//         setTimeout(() => {
+//             messages.delete(message);//@ts-ignore
+//             this.io.sockets.emit('deleteMessage', message.id);//@ts-ignore
+//         }, messageExpirationTimeMS);
+//     }
+
+//     disconnect() {//@ts-ignore
+//         users.delete(this.socket);
+//     }
+// }
+// //@ts-ignore
+// function chat(io) {//@ts-ignore
+//     io.on('connection', (socket) => {
+//         console.log('hello');
+//         new Connection(io, socket);
+//     });
+// }
+
+// var socketio = require('socket.io');
+// var http = require('http');
+
+// var server = http.createServer(app);
+// var io = socketio(server,{
+//   cors: {
+//     origin: '*',
+//     methods: ['GET', 'POST']
+//   }
+// });
+// chat(io);

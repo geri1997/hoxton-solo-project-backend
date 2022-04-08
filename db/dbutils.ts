@@ -294,3 +294,16 @@ export function deleteQuestionLike(userId: number, questionId: number) {
         .prepare(`DELETE FROM questionLikes WHERE userId=? AND questionId=?`)
         .run(userId, questionId);
 }
+
+export function getQuestionsThatIncludeTitle(title: string) {
+    return db
+        .prepare(`select question.*,tags.name as tag,tags.id as tagId, user.username 
+        from question
+        join questionTags on question.id = questionTags.questionId
+        join tags on questionTags.tagId = tags.id
+        join user on question.userId = user.id
+        WHERE question.title LIKE ?
+        Order by question.createdAt desc
+        `)
+        .all(`%${title}%`);
+}

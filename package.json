@@ -14,14 +14,21 @@
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.13",
     "@types/jsonwebtoken": "^8.5.8",
+    "@types/socket.io": "^3.0.2",
     "axios": "^0.26.1",
     "bcrypt": "^5.0.1",
     "better-sqlite3": "^7.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.3",
     "jsonwebtoken": "^8.5.1",
-    "ts-node-dev": "^1.1.8"
+    "moment": "^2.29.2",
+    "peer": "^0.6.1",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.4.1",
+    "ts-node-dev": "^1.1.8",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^6.1.1",
