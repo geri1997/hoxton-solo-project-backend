@@ -648,3 +648,120 @@ app.patch('/question/:id/downvote', (req, res) => {
 //   }
 // });
 // chat(io);
+import fetch from 'node-fetch';
+import jquery from 'jquery';
+import cheerio from 'cheerio';
+import { XMLParser, XMLBuilder, XMLValidator } from 'fast-xml-parser';
+
+app.get('/filma24-new', async (req, res) => {
+    const resq = await fetch('https://www.filma24.so/feed', {
+        headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
+        },
+    });
+    const text = await resq.text();
+    // const html = cheerio.load(text)
+    // const html = jquery.parseHTML(text)
+    // console.log(text);
+
+    const parser = new XMLParser();
+    let jObj = parser.parse(text);
+    console.log(jObj.rss.channel.item);
+    //@ts-ignore
+    // res.send(html);
+    res.send('ok');
+});
+
+import { parse } from 'node-html-parser';
+import { genres, movies } from './movies';
+import https from 'https'; // or 'https' for https:// URLs
+import fs from 'fs';
+
+app.get('/single-movie', async (req, res) => {
+    const resq = await fetch('https://www.filma24.so/post-sitemap9.xml');
+    const htmlText = await resq.text();
+    const parser = new XMLParser();
+    let jObj = parser.parse(htmlText);
+    const entries = jObj.urlset.url; //array of each entry that contains loc,image
+    const movies = [];
+    for (const entry of entries) {
+        console.log(entry);
+        const singleMovie = await fetch(entry.loc);
+        const singleMovieText = await singleMovie.text();
+        const singleMovieHtml = parse(singleMovieText);
+        const movieLink = singleMovieHtml.querySelector(
+            'div.player div.movie-player p iframe'
+        )?.attributes.src;
+        const movieTitle = singleMovieHtml.querySelector(
+            '.movie-info .main-info .title h2'
+        )?.innerText;
+        const trailerLink = singleMovieHtml.querySelector(
+            '.trailer-player iframe'
+        )?.attributes.src;
+        const genreLis = singleMovieHtml.querySelectorAll(
+            '.secondary-info .info-left .genre li'
+        );
+        const genres: any = [];
+        genreLis.forEach((li) => genres.push(li.innerText));
+        const movieLength = singleMovieHtml.querySelector(
+            '.info-right span.movie-len'
+        )?.innerText;
+        const releaseYear = singleMovieHtml.querySelector(
+            '.info-right span.quality'
+        )?.innerText;
+        const imdbRating = singleMovieHtml.querySelector(
+            '.info-right span:last-child a'
+        )?.innerText;
+        const synopsis = singleMovieHtml.querySelector(
+            '.synopsis .syn-wrapper p'
+        )?.innerText;
+        
+        const file = fs.createWriteStream(
+            `images/${entry['image:image']['image:loc'].split('/').pop()}`
+        );
+        const request = https.get(
+            entry['image:image']['image:loc'].replace('http', 'https'),
+            function (response) {
+                response.pipe(file);
+            }
+        );
+        const thumbnail = entry['image:image']['image:loc'];
+        movies.push({
+            title: movieTitle,
+            videoSrc: movieLink,
+            genres,
+            trailerSrc: trailerLink,
+            duration: movieLength,
+            releaseYear,
+            ratingImdb: imdbRating,
+            description: synopsis,
+            photoSrc: thumbnail,
+        });
+    }
+
+    // console.log({movieLink,movieTitle,trailerLink,genres,movieLength,releaseYear,imdbRating,synopsis})
+    res.send(movies);
+});
+
+// app.get('/asd', (req, res) => {
+//     //@ts-ignore
+//     // movies.forEach(movie=>delete movie.genres)
+//     movies.forEach((movie) => (movie.ratingImdb = Number(movie.ratingImdb)));
+//     //@ts-ignore
+//     movies.forEach((movie) => (movie.releaseYear = Number(movie.releaseYear)));
+//     movies.forEach((movie) => {
+//         const genresa = [];
+//         for (let genre of movie.genres) {
+//             const genreId = genres.find((genre1) => genre1.name === genre);
+//             const id = genres.findIndex(
+//                 (genre) => genre.name === genreId?.name
+//             );
+//             //@ts-ignore
+//             genresa.push(id + 1);
+//         }
+//         //@ts-ignore
+//         movie.genres = genresa;
+//     });
+//     res.send(movies);
+// });
